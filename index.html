@@ -116,6 +116,33 @@
             margin-top: 30px;
             color: #333;
         }
+
+        /* TAMBAHAN CSS UNTUK INPUT BUKU KEDUA */
+        .buku2-container {
+            max-width: 600px;
+            margin: 10px auto;
+            padding: 15px;
+            background-color: #e8f4fd;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+            display: none;
+        }
+        
+        .buku2-container label {
+            color: #1976D2;
+        }
+        
+        .buku2-container.show {
+            display: block;
+        }
+        
+        .info-buku2 {
+            font-size: 14px;
+            color: #2196F3;
+            margin-bottom: 10px;
+            font-weight: bold;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -129,20 +156,38 @@
         <label>Nama Peminjam:</label>
         <input type="text" id="nama" required>
 
-        <label>ISBN/Barcode:</label>
-        <input type="text" id="isbn" required>
+        <!-- BUKU 1 -->
+        <label>ISBN/Barcode Buku 1:</label>
+        <input type="text" id="isbn1" required>
 
-        <label>Judul Buku:</label>
-        <input type="text" id="judul" required>
+        <label>Judul Buku 1:</label>
+        <input type="text" id="judul1" required>
 
-        <label>Penerbit:</label>
-        <input type="text" id="penerbit" required>
+        <label>Penerbit Buku 1:</label>
+        <input type="text" id="penerbit1" required>
 
-        <label>Tahun Terbit:</label>
-        <input type="number" id="tahunTerbit" min="1900" max="2099" required>
+        <label>Tahun Terbit Buku 1:</label>
+        <input type="number" id="tahunTerbit1" min="1900" max="2099" required>
+
+        <!-- CONTAINER UNTUK BUKU 2 (AWALNYA HIDDEN) -->
+        <div id="buku2Container" class="buku2-container">
+            <div class="info-buku2">📚 DATA BUKU KEDUA</div>
+            
+            <label>ISBN/Barcode Buku 2:</label>
+            <input type="text" id="isbn2" placeholder="Kosongkan jika hanya 1 buku">
+
+            <label>Judul Buku 2:</label>
+            <input type="text" id="judul2" placeholder="Kosongkan jika hanya 1 buku">
+
+            <label>Penerbit Buku 2:</label>
+            <input type="text" id="penerbit2" placeholder="Kosongkan jika hanya 1 buku">
+
+            <label>Tahun Terbit Buku 2:</label>
+            <input type="number" id="tahunTerbit2" min="1900" max="2099" placeholder="Kosongkan jika hanya 1 buku">
+        </div>
 
         <label>Jumlah Buku:</label>
-        <select id="jumlahBuku" required>
+        <select id="jumlahBuku" required onchange="toggleBuku2()">
             <option value="">Pilih Jumlah</option>
             <option value="1">1 Buku</option>
             <option value="2">2 Buku</option>
@@ -164,10 +209,14 @@
                 <th>No</th>
                 <th>Kode Pinjam</th>
                 <th>Nama</th>
-                <th>ISBN/Barcode</th>
-                <th>Judul</th>
-                <th>Penerbit</th>
-                <th>Tahun Terbit</th>
+                <th>ISBN1</th>
+                <th>Judul1</th>
+                <th>Penerbit1</th>
+                <th>Tahun1</th>
+                <th>ISBN2</th>
+                <th>Judul2</th>
+                <th>Penerbit2</th>
+                <th>Tahun2</th>
                 <th>Jumlah</th>
                 <th>Tgl Pinjam</th>
                 <th>Tgl Kembali</th>
@@ -180,26 +229,71 @@
     </table>
 
     <script>
+        // Array untuk menyimpan data
         let dataPeminjaman = [];
-        let sedangEdit = -1; // -1 berarti tidak sedang edit
+        let sedangEdit = -1;
         const DENDA_PER_HARI = 5000;
         const BATAS_HARI = 14;
 
         const form = document.getElementById("formPeminjaman");
         const tabelData = document.getElementById("tabelData");
 
+        // FUNGSI TAMBAHAN: Toggle tampilan form buku 2
+        function toggleBuku2() {
+            const jumlah = document.getElementById("jumlahBuku").value;
+            const container = document.getElementById("buku2Container");
+            
+            if (jumlah === "2") {
+                container.classList.add("show");
+                // Set required untuk input buku 2
+                document.getElementById("isbn2").required = true;
+                document.getElementById("judul2").required = true;
+                document.getElementById("penerbit2").required = true;
+                document.getElementById("tahunTerbit2").required = true;
+            } else {
+                container.classList.remove("show");
+                // Hapus required untuk input buku 2
+                document.getElementById("isbn2").required = false;
+                document.getElementById("judul2").required = false;
+                document.getElementById("penerbit2").required = false;
+                document.getElementById("tahunTerbit2").required = false;
+                
+                // Kosongkan nilai buku 2
+                document.getElementById("isbn2").value = "";
+                document.getElementById("judul2").value = "";
+                document.getElementById("penerbit2").value = "";
+                document.getElementById("tahunTerbit2").value = "";
+            }
+        }
+
         form.addEventListener("submit", function(e) {
             e.preventDefault();
 
+            // Ambil data buku 1
             const kodePinjam = document.getElementById("kodePinjam").value;
             const nama = document.getElementById("nama").value;
-            const isbn = document.getElementById("isbn").value;
-            const judul = document.getElementById("judul").value;
-            const penerbit = document.getElementById("penerbit").value;
-            const tahunTerbit = document.getElementById("tahunTerbit").value;
+            const isbn1 = document.getElementById("isbn1").value;
+            const judul1 = document.getElementById("judul1").value;
+            const penerbit1 = document.getElementById("penerbit1").value;
+            const tahunTerbit1 = document.getElementById("tahunTerbit1").value;
+            
+            // Ambil data buku 2 (jika ada)
             const jumlahBuku = document.getElementById("jumlahBuku").value;
+            const isbn2 = jumlahBuku === "2" ? document.getElementById("isbn2").value : "";
+            const judul2 = jumlahBuku === "2" ? document.getElementById("judul2").value : "";
+            const penerbit2 = jumlahBuku === "2" ? document.getElementById("penerbit2").value : "";
+            const tahunTerbit2 = jumlahBuku === "2" ? document.getElementById("tahunTerbit2").value : "";
+            
             const tanggalPinjam = document.getElementById("tanggalPinjam").value;
             const tanggalKembali = document.getElementById("tanggalKembali").value;
+
+            // Validasi buku 2 jika jumlah 2
+            if (jumlahBuku === "2") {
+                if (!isbn2 || !judul2 || !penerbit2 || !tahunTerbit2) {
+                    alert('Semua field buku kedua harus diisi!');
+                    return;
+                }
+            }
 
             const pinjamDate = new Date(tanggalPinjam);
             const kembaliDate = new Date(tanggalKembali);
@@ -221,10 +315,14 @@
                 dataPeminjaman.push({
                     kodePinjam,
                     nama,
-                    isbn,
-                    judul,
-                    penerbit,
-                    tahunTerbit,
+                    isbn1,
+                    judul1,
+                    penerbit1,
+                    tahunTerbit1,
+                    isbn2,
+                    judul2,
+                    penerbit2,
+                    tahunTerbit2,
                     jumlahBuku,
                     tanggalPinjam,
                     tanggalKembali,
@@ -236,10 +334,14 @@
                 dataPeminjaman[sedangEdit] = {
                     kodePinjam,
                     nama,
-                    isbn,
-                    judul,
-                    penerbit,
-                    tahunTerbit,
+                    isbn1,
+                    judul1,
+                    penerbit1,
+                    tahunTerbit1,
+                    isbn2,
+                    judul2,
+                    penerbit2,
+                    tahunTerbit2,
                     jumlahBuku,
                     tanggalPinjam,
                     tanggalKembali,
@@ -251,24 +353,49 @@
 
             tampilkanData();
             form.reset();
+            toggleBuku2(); // Sembunyikan buku 2 setelah submit
         });
 
         function hapusData(index) {
-            dataPeminjaman.splice(index, 1);
-            tampilkanData();
+            if (confirm('Yakin ingin menghapus data ini?')) {
+                dataPeminjaman.splice(index, 1);
+                tampilkanData();
+            }
+        }
+
+        function hapusSemua() {
+            if (confirm('Yakin ingin menghapus semua data?')) {
+                dataPeminjaman = [];
+                tampilkanData();
+            }
         }
 
         function editData(index) {
+            const data = dataPeminjaman[index];
+            
             // Isi form dengan data yang akan diedit
-            document.getElementById("kodePinjam").value = dataPeminjaman[index].kodePinjam;
-            document.getElementById("nama").value = dataPeminjaman[index].nama;
-            document.getElementById("isbn").value = dataPeminjaman[index].isbn;
-            document.getElementById("judul").value = dataPeminjaman[index].judul;
-            document.getElementById("penerbit").value = dataPeminjaman[index].penerbit;
-            document.getElementById("tahunTerbit").value = dataPeminjaman[index].tahunTerbit;
-            document.getElementById("jumlahBuku").value = dataPeminjaman[index].jumlahBuku;
-            document.getElementById("tanggalPinjam").value = dataPeminjaman[index].tanggalPinjam;
-            document.getElementById("tanggalKembali").value = dataPeminjaman[index].tanggalKembali;
+            document.getElementById("kodePinjam").value = data.kodePinjam;
+            document.getElementById("nama").value = data.nama;
+            document.getElementById("isbn1").value = data.isbn1;
+            document.getElementById("judul1").value = data.judul1;
+            document.getElementById("penerbit1").value = data.penerbit1;
+            document.getElementById("tahunTerbit1").value = data.tahunTerbit1;
+            document.getElementById("jumlahBuku").value = data.jumlahBuku;
+            
+            // Toggle dan isi buku 2 jika ada
+            if (data.jumlahBuku === "2") {
+                toggleBuku2();
+                document.getElementById("isbn2").value = data.isbn2 || "";
+                document.getElementById("judul2").value = data.judul2 || "";
+                document.getElementById("penerbit2").value = data.penerbit2 || "";
+                document.getElementById("tahunTerbit2").value = data.tahunTerbit2 || "";
+            } else {
+                // Pastikan buku 2 tersembunyi
+                document.getElementById("buku2Container").classList.remove("show");
+            }
+            
+            document.getElementById("tanggalPinjam").value = data.tanggalPinjam;
+            document.getElementById("tanggalKembali").value = data.tanggalKembali;
             
             sedangEdit = index;
         }
@@ -282,10 +409,14 @@
                         <td>${index + 1}</td>
                         <td>${data.kodePinjam}</td>
                         <td>${data.nama}</td>
-                        <td>${data.isbn}</td>
-                        <td>${data.judul}</td>
-                        <td>${data.penerbit}</td>
-                        <td>${data.tahunTerbit}</td>
+                        <td>${data.isbn1}</td>
+                        <td>${data.judul1}</td>
+                        <td>${data.penerbit1}</td>
+                        <td>${data.tahunTerbit1}</td>
+                        <td>${data.isbn2 || '-'}</td>
+                        <td>${data.judul2 || '-'}</td>
+                        <td>${data.penerbit2 || '-'}</td>
+                        <td>${data.tahunTerbit2 || '-'}</td>
                         <td>${data.jumlahBuku}</td>
                         <td>${data.tanggalPinjam}</td>
                         <td>${data.tanggalKembali}</td>
@@ -298,6 +429,31 @@
                     </tr>
                 `;
             });
+        }
+
+        // Update perhitungan saat tanggal berubah
+        document.getElementById('tanggalPinjam').addEventListener('change', hitungLamaDenda);
+        document.getElementById('tanggalKembali').addEventListener('change', hitungLamaDenda);
+        
+        function hitungLamaDenda() {
+            const tglPinjam = document.getElementById('tanggalPinjam').value;
+            const tglKembali = document.getElementById('tanggalKembali').value;
+            
+            if (tglPinjam && tglKembali) {
+                const pinjam = new Date(tglPinjam);
+                const kembali = new Date(tglKembali);
+                
+                if (kembali >= pinjam) {
+                    const lama = Math.ceil((kembali - pinjam) / (1000 * 60 * 60 * 24));
+                    
+                    let denda = 0;
+                    if (lama > BATAS_HARI) {
+                        denda = (lama - BATAS_HARI) * DENDA_PER_HARI;
+                    }
+                    // Tampilkan denda (opsional)
+                    // document.getElementById('dendaDisplay').textContent = 'Rp ' + denda.toLocaleString();
+                }
+            }
         }
     </script>
 
