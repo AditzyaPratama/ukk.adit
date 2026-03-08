@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Form Peminjaman Buku</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background-color: cyan;
+        }
+        input, select {
+            margin: 5px 0;
+            padding: 5px;
+            width: 250px;
+        }
+        button {
+            padding: 6px 12px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 8px;
+            text-align: center;
+        }
+        .denda {
+            color: red;
+            font-weight: bold;
+        }
+        .btn-hapus {
+            background-color: #f44336;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-hapus:hover {
+            background-color: #d32f2f;
+        }
+        .btn-edit {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 5px;
+        }
+        .btn-edit:hover {
+            background-color: #1976D2;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Form Peminjaman Buku</h2>
+
+    <form id="formPeminjaman">
+        <label>Kode Pinjam:</label><br>
+        <input type="text" id="kodePinjam" required><br>
+
+        <label>Nama Peminjam:</label><br>
+        <input type="text" id="nama" required><br>
+
+        <label>ISBN/Barcode:</label><br>
+        <input type="text" id="isbn" required><br>
+
+        <label>Judul Buku:</label><br>
+        <input type="text" id="judul" required><br>
+
+        <label>Penerbit:</label><br>
+        <input type="text" id="penerbit" required><br>
+
+        <label>Tahun Terbit:</label><br>
+        <input type="number" id="tahunTerbit" min="1900" max="2099" required><br>
+
+        <label>Jumlah Buku:</label><br>
+        <select id="jumlahBuku" required>
+            <option value="">Pilih Jumlah</option>
+            <option value="1">1 Buku</option>
+            <option value="2">2 Buku</option>
+        </select><br>
+
+        <label>Tanggal Pinjam:</label><br>
+        <input type="date" id="tanggalPinjam" required><br>
+
+        <label>Tanggal Pengembalian:</label><br>
+        <input type="date" id="tanggalKembali" required><br>
+
+        <button type="submit">Simpan</button>
+    </form>
+
+    <h3>Daftar Peminjaman</h3>
+    <table>
+        <thead>
+            <tr>
+                <th>No</th>
+                <th>Kode Pinjam</th>
+                <th>Nama</th>
+                <th>ISBN/Barcode</th>
+                <th>Judul</th>
+                <th>Penerbit</th>
+                <th>Tahun Terbit</th>
+                <th>Jumlah</th>
+                <th>Tgl Pinjam</th>
+                <th>Tgl Kembali</th>
+                <th>Status</th>
+                <th>Denda</th>
+                <th>Aksi</th>
+            </tr>
+        </thead>
+        <tbody id="tabelData"></tbody>
+    </table>
+
+    <script>
+        let dataPeminjaman = [];
+        let sedangEdit = -1; // -1 berarti tidak sedang edit
+        const DENDA_PER_HARI = 5000;
+        const BATAS_HARI = 14;
+
+        const form = document.getElementById("formPeminjaman");
+        const tabelData = document.getElementById("tabelData");
+
+        form.addEventListener("submit", function(e) {
+            e.preventDefault();
+
+            const kodePinjam = document.getElementById("kodePinjam").value;
+            const nama = document.getElementById("nama").value;
+            const isbn = document.getElementById("isbn").value;
+            const judul = document.getElementById("judul").value;
+            const penerbit = document.getElementById("penerbit").value;
+            const tahunTerbit = document.getElementById("tahunTerbit").value;
+            const jumlahBuku = document.getElementById("jumlahBuku").value;
+            const tanggalPinjam = document.getElementById("tanggalPinjam").value;
+            const tanggalKembali = document.getElementById("tanggalKembali").value;
+
+            const pinjamDate = new Date(tanggalPinjam);
+            const kembaliDate = new Date(tanggalKembali);
+
+            // Hitung selisih hari
+            let selisihHari = Math.ceil((kembaliDate - pinjamDate) / (1000 * 60 * 60 * 24));
+
+            let denda = 0;
+            let status = "Masih dalam batas waktu";
+
+            if (selisihHari > BATAS_HARI) {
+                let hariTelat = selisihHari - BATAS_HARI;
+                denda = hariTelat * DENDA_PER_HARI;
+                status = "Terlambat " + hariTelat + " hari";
+            }
+
+            if (sedangEdit === -1) {
+                // Tambah data baru
+                dataPeminjaman.push({
+                    kodePinjam,
+                    nama,
+                    isbn,
+                    judul,
+                    penerbit,
+                    tahunTerbit,
+                    jumlahBuku,
+                    tanggalPinjam,
+                    tanggalKembali,
+                    status,
+                    denda
+                });
+            } else {
+                // Update data yang sedang diedit
+                dataPeminjaman[sedangEdit] = {
+                    kodePinjam,
+                    nama,
+                    isbn,
+                    judul,
+                    penerbit,
+                    tahunTerbit,
+                    jumlahBuku,
+                    tanggalPinjam,
+                    tanggalKembali,
+                    status,
+                    denda
+                };
+                sedangEdit = -1;
+            }
+
+            tampilkanData();
+            form.reset();
+        });
+
+        function hapusData(index) {
+            dataPeminjaman.splice(index, 1);
+            tampilkanData();
+        }
+
+        function editData(index) {
+            // Isi form dengan data yang akan diedit
+            document.getElementById("kodePinjam").value = dataPeminjaman[index].kodePinjam;
+            document.getElementById("nama").value = dataPeminjaman[index].nama;
+            document.getElementById("isbn").value = dataPeminjaman[index].isbn;
+            document.getElementById("judul").value = dataPeminjaman[index].judul;
+            document.getElementById("penerbit").value = dataPeminjaman[index].penerbit;
+            document.getElementById("tahunTerbit").value = dataPeminjaman[index].tahunTerbit;
+            document.getElementById("jumlahBuku").value = dataPeminjaman[index].jumlahBuku;
+            document.getElementById("tanggalPinjam").value = dataPeminjaman[index].tanggalPinjam;
+            document.getElementById("tanggalKembali").value = dataPeminjaman[index].tanggalKembali;
+            
+            sedangEdit = index;
+        }
+
+        function tampilkanData() {
+            tabelData.innerHTML = "";
+
+            dataPeminjaman.forEach((data, index) => {
+                tabelData.innerHTML += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${data.kodePinjam}</td>
+                        <td>${data.nama}</td>
+                        <td>${data.isbn}</td>
+                        <td>${data.judul}</td>
+                        <td>${data.penerbit}</td>
+                        <td>${data.tahunTerbit}</td>
+                        <td>${data.jumlahBuku}</td>
+                        <td>${data.tanggalPinjam}</td>
+                        <td>${data.tanggalKembali}</td>
+                        <td>${data.status}</td>
+                        <td class="denda">Rp ${data.denda.toLocaleString()}</td>
+                        <td>
+                            <button class="btn-edit" onclick="editData(${index})">Edit</button>
+                            <button class="btn-hapus" onclick="hapusData(${index})">Hapus</button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+    </script>
+
+</body>
+</html>
